@@ -44,7 +44,7 @@
 
 {%- if theme.footer.powered.enable %}
   <div class="powered-by">
-    {{- __('footer.powered', next_url('https://github.com/vulcan-0/sword', 'sword', {class: 'theme-link'})) }}
+    {{- __('footer.powered', next_url('https://github.com/vulcan-0', 'asteroid', {class: 'theme-link'})) }}
     {%- if theme.footer.powered.version %} v{{ hexo_version }}{%- endif %}
   </div>
 {%- endif %}
