@@ -9,3 +9,9 @@ cd blog
 npm install
 hexo server
 ```
+
+## create a new post
+
+```
+hexo new <title>
+```
