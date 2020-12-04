@@ -94,7 +94,7 @@ while (true) {
 
 - Wrapper（上面没有提到，但非常重要的一个元素）：Context的子容器，一个Wrapper代表的是一个Servlet，对应到浏览器的一个请求。
 
-我们想一下Tomcat为什么要作出这样的抽象？Tomcat是一个Web服务器，所以，将Tomcat抽象为一个Server是合理的。服务器之上，可以提供一系列的服务，因此，Server下面会有Service。去掉Service这层抽象，直接通过Server将Connector和Container绑定起来可不可以？实际上也是可以的，但是这样显然会比中间多一个Service的扩展性差。我们前面提到Web服务器的两个核心工作是，`建立HTTP连接和处理HTTP报文`（对于AJP协议，是建立AJP连接和处理AJP报文），Tomcat抽象出Connector和Container分别来处理这两个任务。其中，Container包含四个层级：Engine（代表集群）、Host（代表站点）、Context（代表Web应用）、Wrapper（代表单个请求）。
+我们想一下Tomcat为什么要作出这样的抽象？Tomcat是一个Web服务器，所以，将Tomcat抽象为一个Server是合理的。服务器之上，可以提供一系列的服务，因此，Server下面会有Service。去掉Service这层抽象，直接通过Server将Connector和Container绑定起来可不可以？实际上也是可以的，但是这样显然会比中间多一层Service的扩展性差。我们前面提到Web服务器的两个核心工作是，`建立HTTP连接和处理HTTP报文`（对于AJP协议，是建立AJP连接和处理AJP报文），Tomcat抽象出Connector和Container分别来处理这两个任务。其中，Container包含四个层级：Engine（代表集群）、Host（代表站点）、Context（代表Web应用）、Wrapper（代表单个请求）。
 
 ### Connector
 
@@ -102,7 +102,7 @@ while (true) {
 
 #### 线程池
 
-我们再看下上面提到的简单Web服务器示例代码：
+我们再次看下上面提到的简单Web服务器示例代码：
 
 ```java
 ServerSocket serverSocket = new ServerSocket(8080);
@@ -161,9 +161,12 @@ do {
     boolean requestAlive = request != null ? request.isAlive() : false;
     keepAlive = (keepIt || requestAlive) && keepAliveTime > 0;
 } while (keepAlive);
+
+......
+socket.colse();
 ```
 
-可以看到，只要keepAlive是true，就会不断处理新的请求，直到keepAlive变为false。requestAlive表示请求是否还存活，具体是通过判断请求头中的Connection字段来确定的，示例代码如下：
+可以看到，只要keepAlive是true，就会不断处理新的请求，直到keepAlive变为false，才会断开连接。keepAlive由三个变量的值：keepIt、requestAlive、keepAliveTime共同决定。requestAlive表示请求是否还存活，具体是通过判断请求头中的Connection字段来确定的，示例代码如下：
 
 ```java
 public boolean isAlive() {
@@ -177,7 +180,9 @@ public boolean isAlive() {
 }
 ```
 
-示例代码中的keepIt表示什么意思呢？实现了HTTP 1.1协议的浏览器，会定期向服务器发起心跳检查，如果该请求是一个心跳检查，那么keepIt就为true。最后还会判断下连接的保持时间是否超过了keepAliveTime，如果超过了则断开连接。当然每次接收到新的请求的时候，是会重置keepAliveTime的，如下：
+示例代码中的keepIt表示什么意思呢？实现了HTTP 1.1协议的浏览器，会定期向服务器发起心跳检查，如果该请求是一个心跳检查，那么keepIt就为true。
+
+最后还会判断下连接的保持时间是否超过了keepAliveTime，如果超过了则断开连接。当然每次接收到新的请求的时候，是会重置keepAliveTime的，如下：
 
 ```java
 keepAliveTime = Constants.DEFAULT_KEEP_ALIVE_TIME;
@@ -222,42 +227,76 @@ Container的invoke执行过程如下：
 
 ![](/images/Tomcat-Container-Pipeline-invoke.jpg)
 
-可以看到，Connector在创建了Request和Response对象后，再经过StandardEngine、StandardHost、StandardContext、StandardWrapper等的层层调用后，消息才最终到达了servlet。这样做有什么好处呢？我们可以发现，经过这样的调用链封装，容器的每一层都可以拿到Request和Response对象，从而可以自由执行自己那部分的逻辑了。结合上面的类图，我们发现每一个Container都是一个Pipeline，我们可以往每个Pipeline里面添加定制化的Value，如此，Container就拥有了很好的扩展性。
+可以看到，Connector在创建了Request和Response对象后，再经过StandardEngine、StandardHost、StandardContext、StandardWrapper等的层层调用后，消息才最终到达了FilterChain。这样做有什么好处呢？我们可以发现，经过这样的调用链封装，容器的每一层都可以拿到Request和Response对象，从而可以自由执行自己那部分的逻辑了。结合上面的类图，我们发现每一个Container都是一个Pipeline，我们可以往每个Pipeline里面添加定制化的Value，如此，Container就拥有了更好的扩展性。
 
 [comment]: <> (关于filter的内容，请听下回分解)
 
 #### Lifecycle
 
-Container实现了Lifecycle，以提供生命周期管理的功能，类的关系图和示例代码如下：
+Container实现了Lifecycle接口，以提供生命周期管理的功能，其中，类的关系图如下（所有的Container都实现了Lifecycle接口，此处使用StantardContext作为示例）：
 
 ![](/images/Tomcat-Container-Lifecycle.jpg)
+
+StantardContext的示例代码如下：
 
 ```java
 public void start() {
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.BEFORE_START_EVENT, "");
-    StandardContextValue basic = new StandardContextValue();
-    basic.setContainer(this);
-    setBasic(basic);
+    ......
 
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.START_EVENT, "");
     Container[] containers = findChildren();
     for (Container container : containers) {
         container.start();
     }
+
+    ......
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.AFTER_START_EVENT, "");
 }
 
 public void stop() {
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.BEFORE_STOP_EVENT, "");
-    setBasic(null);
-    setPipeline(null);
+    ......
 
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.STOP_EVENT, "");
     Container[] containers = findChildren();
     for (Container container : containers) {
         container.stop();
     }
+
+    ......
     lifecycleSupport.fireLifecycleEvent(LifecycleEvent.AFTER_STOP_EVENT, "");
+}
+
+public void addLifecycleListener(LifecycleListener lifecycleListener) {
+    lifecycleSupport.addLifecycleListener(lifecycleListener);
+}
+
+public void removeLifecycleListener(LifecycleListener lifecycleListener) {
+    lifecycleSupport.removeLifecycleListener(lifecycleListener);
+}
+```
+
+LifecycleSupport的示例代码如下：
+
+```java
+public void fireLifecycleEvent(String type, Object data) {
+    LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycle, type, data);
+    List<LifecycleListener> currentListeners;
+    synchronized (listeners) {
+        currentListeners = new ArrayList<LifecycleListener>(listeners);
+    }
+    for (LifecycleListener lifecycleListener : currentListeners) {
+        lifecycleListener.lifecycleEvent(lifecycleEvent);
+    }
+}
+
+public void addLifecycleListener(LifecycleListener lifecycleListener) {
+        listeners.add(lifecycleListener);
+}
+
+public void removeLifecycleListener(LifecycleListener lifecycleListener) {
+    listeners.remove(lifecycleListener);
 }
 ```
 
@@ -274,6 +313,20 @@ Container实现了Lifecycle接口的start()和stop()方法，在启动或关闭�
   ......
 </Server>
 ```
+
+#### Filter
+
+在编写Web应用程序的时候，我们经常需要编写Filter，Filter的实现是怎么样的呢？我们上面其实已经有说明，Request和Response对象从Connector产生，一直传递到了FilterChain，FilterChain接下来会做什么处理呢？我们看下下面的类关系图：
+
+![](/images/Tomcat-Container-Filter-class.jpg)
+
+再看下调用关系：
+
+![](/images/Tomcat-Container-Filter-doFilter.jpg)
+
+通过观察可以发现，Filter其实也使用了Pipeline模式，ApplicationFilterChain在接收到请求时，会逐个获取并调用Filter，等所有Filter都调用完后，再去调用servlet。
+
+至此，Tomcat的核心架构和核心调用链路就清晰了。
 
 [comment]: <> (关于Logger、Loader、Session、Realm、Digester、Manager、JMX的内容，请自行学习)
 
