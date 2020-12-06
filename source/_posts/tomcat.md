@@ -5,6 +5,7 @@ date: 2020-11-06 12:35:11
 tags:
     - 服务器
     - Tomcat
+categories: 服务器
 ---
 
 ## 从一个简单的Web服务器说起
@@ -215,7 +216,7 @@ container.invoke(requestFacade, responseFacade);
 
 ### Container
 
-我们下面看下Container的Pipeline模式和Lifecycle接口。
+我们接下来看下Container的Pipeline模式、Lifecycle接口和Filter的实现。
 
 #### Pipeline
 
