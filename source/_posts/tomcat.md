@@ -43,7 +43,7 @@ while (true) {
 
 我们先看下Tomcat的架构图：
 
-![](/images/Tomcat-Architechture.jpg "from https://howtodoinjava.com/tomcat/tomcats-architecture-and-server-xml-configuration-tutorial/")
+![](/images/tomcat/Tomcat-Architechture.jpg "from https://howtodoinjava.com/tomcat/tomcats-architecture-and-server-xml-configuration-tutorial/")
 
 再看下Tomcat server.xml的默认配置（下面提到的Tomcat配置均来自于【Tomcat 5.5.23】）：
 
@@ -210,7 +210,7 @@ container.invoke(requestFacade, responseFacade);
 
 相关类图如下：
 
-![](/images/Tomcat-Request-Response.jpg)
+![](/images/tomcat/Tomcat-Request-Response.jpg)
 
 可以看到，上述示例使用了[外观模式](https://www.runoob.com/design-pattern/facade-pattern.html)对Request和Response对象进行封装，为什么要使用外观模式呢？我们知道外观模式主要解决的问题是`降低访问复杂系统的内部子系统时的复杂度，简化客户端与之的接口`，而这里的封装也是为了对servlet程序员屏蔽HttpRequest和HttpResponse的特有方法，只给用户暴露HttpServletRequest和HttpServletResponse接口定义的方法。
 
@@ -222,21 +222,19 @@ container.invoke(requestFacade, responseFacade);
 
 Container采用了Pipeline模式，它们的类关系图如下：
 
-![](/images/Tomcat-Container-Pipeline-class.jpg)
+![](/images/tomcat/Tomcat-Container-Pipeline-class.jpg)
 
 Container的invoke执行过程如下：
 
-![](/images/Tomcat-Container-Pipeline-invoke.jpg)
+![](/images/tomcat/Tomcat-Container-Pipeline-invoke.jpg)
 
 可以看到，Connector在创建了Request和Response对象后，再经过StandardEngine、StandardHost、StandardContext、StandardWrapper等的层层调用后，消息才最终到达了FilterChain。这样做有什么好处呢？我们可以发现，经过这样的调用链封装，容器的每一层都可以拿到Request和Response对象，从而可以自由执行自己那部分的逻辑了。结合上面的类图，我们发现每一个Container都是一个Pipeline，我们可以往每个Pipeline里面添加定制化的Value，如此，Container就拥有了更好的扩展性。
-
-[comment]: <> (关于filter的内容，请听下回分解)
 
 #### Lifecycle
 
 Container实现了Lifecycle接口，以提供生命周期管理的功能，其中，类的关系图如下（所有的Container都实现了Lifecycle接口，此处使用StantardContext作为示例）：
 
-![](/images/Tomcat-Container-Lifecycle.jpg)
+![](/images/tomcat/Tomcat-Container-Lifecycle.jpg)
 
 StantardContext的示例代码如下：
 
@@ -319,15 +317,15 @@ Container实现了Lifecycle接口的start()和stop()方法，在启动或关闭�
 
 在编写Web应用程序的时候，我们经常需要编写Filter，Filter的实现是怎么样的呢？我们上面其实已经有说明，Request和Response对象从Connector产生，一直传递到了FilterChain，FilterChain接下来会做什么处理呢？我们看下下面的类关系图：
 
-![](/images/Tomcat-Container-Filter-class.jpg)
+![](/images/tomcat/Tomcat-Container-Filter-class.jpg)
 
 再看下调用关系：
 
-![](/images/Tomcat-Container-Filter-doFilter.jpg)
+![](/images/tomcat/Tomcat-Container-Filter-doFilter.jpg)
 
 通过观察可以发现，Filter其实也使用了Pipeline模式，ApplicationFilterChain在接收到请求时，会逐个获取并调用Filter，等所有Filter都调用完后，再去调用servlet。
 
-至此，Tomcat的核心架构和核心调用链路就清晰了。
+至此，Tomcat的核心架构和核心调用链路就聊完了。
 
 [comment]: <> (关于Logger、Loader、Session、Realm、Digester、Manager、JMX的内容，请自行学习)
 
