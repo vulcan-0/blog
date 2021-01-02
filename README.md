@@ -15,3 +15,9 @@ hexo server
 ```
 hexo new <title>
 ```
+
+## clean cache
+
+```
+hexo clean
+```
