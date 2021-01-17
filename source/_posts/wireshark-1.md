@@ -7,7 +7,7 @@ tags:
 categories: 网络
 ---
 
-本文以我们相对比较熟悉的HTTP协议为例子，对Wireshark抓取到的数据包进行分析。在开始本文之前，假定读者已经掌握了如何通过Wireshark进行抓包。（本文使用的Wireshark为Mac系统下的3.2.2版本）
+本文以我们相对比较熟悉的HTTP协议为例子，对Wireshark抓取到的数据包进行分析。在开始本文之前，假定读者已经掌握了如何通过Wireshark进行抓包。
 
 ## 总览
 
@@ -130,7 +130,7 @@ Sequence number: 1    (relative sequence number)
 Acknowledgment number: 1    (relative ack number)
 ```
 
-这几个`relative number`都是在Wireshark中定义的相对序号，它们是怎么来的以及有什么作用？后面在讲述TCP三次握手与四次挥手的文章中会详细展开。
+这几个`relative number`都是在Wireshark中定义的相对序号，它们是怎么来的以及有什么作用？后面在讲述TCP stream的文章中会详细展开。
 
 第12、13个字节中，前4位表示数据偏移，即从哪个字节开始是数据，因此也可以将其理解为TCP首部的长度，以4字节为单位，`0x8`，即首部长度为：8*4=32字节。我们前面已经知道IP报文总长度为157，IP首部长度为20，因此TCP报文总长度为137，其中TCP首部长度为32，因此TCP数据长度为105，这就解析了前面的`TCP Segment Len`的来源了。接着后面3位是保留为，值均为0。最后面9位从前往后分别表示：
 
@@ -170,7 +170,7 @@ Timestamp的格式如下：
 
 ![](/images/wireshark/1/Wireshark-TCP-options-timestamp.png)
 
-紧接着`0x08`的是`0x0a`即长度为`10`，再紧接着的前4位为TSval，表示发送端在发送TCP Segment时的Timestamp；后4位为TSecr，表示的是接收端在对该TCP Segment做ACK时，将TSval值回显在TSecr字段中。Timestamp是一个随时间单调递增的值，由于TCP接收端只需要在ACK中将TSval简单地回显，因此通信双方并不需要进行时间同步等操作。
+紧接着`0x08`的是`0x0a`即长度为`10`，再紧接着的前4位为TSval，表示发送端在发送TCP Segment时的Timestamp；后4位为TSecr，表示的是接收端在对该TCP Segment做ACK时，将TSval值回显在TSecr字段中。Timestamp是一个随时间单调递增的值，由于TCP接收端只需要在ACK中将TSval简单地回显，因此通信双方并不需要进行时间同步等操作。[参考博文](https://blog.csdn.net/blakegao/article/details/19419237)
 
 ### 其他
 
@@ -192,7 +192,10 @@ Timestamp的格式如下：
 
 到了HTTP这部分看起来就比较轻松了，HTTP协议即超文本传输协议，我们将其中的二进制字节码一一翻译成AIISC码字符，即可看到其完整的文本内容，本文不再赘述。
 
-[comment]: <> (后续：Wireshark系列 2 —— TCP三次握手与四次挥手)
-[comment]: <> (后续：Wireshark系列 3 —— HTTPS传输分析)
-[comment]: <> (后续：Wireshark系列 4 —— MySQL传输分析)
-[comment]: <> (后续：Wireshark系列 5 —— Redis传输分析)
+> 说明： 本系列使用的Wireshark版本为Mac系统下的3.2.2版本。
+
+[comment]: <> (后续：Wireshark系列 2 —— TCP stream)
+[comment]: <> (后续：Wireshark系列 3 —— DNS - 包含UDP)
+[comment]: <> (后续：Wireshark系列 4 —— HTTPS传输分析)
+[comment]: <> (后续：Wireshark系列 5 —— MySQL传输分析)
+[comment]: <> (后续：Wireshark系列 6 —— Redis传输分析)
