@@ -192,10 +192,10 @@ Timestamp的格式如下：
 
 到了HTTP这部分看起来就比较轻松了，HTTP协议即超文本传输协议，我们将其中的二进制字节码一一翻译成AIISC码字符，即可看到其完整的文本内容，本文不再赘述。
 
-> 说明： 本系列使用的Wireshark版本为Mac系统下的3.2.2版本。
+> 说明：本系列使用的Wireshark版本为Mac系统下的3.2.2版本。
 
 [comment]: <> (后续：Wireshark系列 2 —— TCP stream)
-[comment]: <> (后续：Wireshark系列 3 —— DNS - 包含UDP)
+[comment]: <> (后续：Wireshark系列 3 —— DNS)
 [comment]: <> (后续：Wireshark系列 4 —— HTTPS传输分析)
 [comment]: <> (后续：Wireshark系列 5 —— MySQL传输分析)
 [comment]: <> (后续：Wireshark系列 6 —— Redis传输分析)
