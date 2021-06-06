@@ -7,7 +7,7 @@ tags:
 categories: 网络
 ---
 
-本文通过抓取DNS包，结合DNS协议，对域名解析过程进行分析。
+本文通过抓取DNS包，结合DNS协议，对域名解析过程进行大致分析。
 
 ## UDP
 
@@ -45,6 +45,8 @@ DNS记录类型的含义如下：
 
 ![](/images/wireshark/3/Wireshark-DNS-DNS5.png)
 
-查询域名`zhuanlan.zhihu.com`最终定位到了域名`j1hqc7ee.shced.d0.tdnsv5.com`，域名`j1hqc7ee.shced.d0.tdnsv5.com`指向了11个IP地址。它的授权服务器域名为`d0.tdnsv5.com`，它的映射信息记录在域名为`ns1.d0.tdnsv5.com`的服务器中，其中，`ns1.d0.tdnsv5.com`指向了7个具体的IP地址。
+查询域名`zhuanlan.zhihu.com`最终定位到了域名`j1hqc7ee.shced.d0.tdnsv5.com`，域名`j1hqc7ee.shced.d0.tdnsv5.com`指向了11个IP地址。`d0.tdnsv5.com`的子域名与IP的映射记录在授权名称服务器`ns1.d0.tdnsv5.com`中，`ns1.d0.tdnsv5.com`指向了7个具体的IP地址。
 
-[comment]: <> (单播、组播、任播；DNSmasq)
+DNS协议通过域名将服务器的IP查询出来，即域名解析过程完成，之后在系统中访问该域名，就可以直接将TCP请求发送到对应的IP上了。
+
+[comment]: <> (单播、组播、任播；DNSmasq；内部权威DNS、外部权威DNS、递归DNS)
